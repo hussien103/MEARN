@@ -1,5 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-import { IsEnum,  IsString, Length } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  Length,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateTicketDto {
   @IsString()
@@ -7,7 +12,8 @@ export class CreateTicketDto {
   title: string;
 
   @IsString()
-  @Length(15)
+  @MinLength(15)
+  @MaxLength(2000)
   description: string;
 
   @IsEnum(['open', 'in-progress', 'closed'])
@@ -17,9 +23,10 @@ export class CreateTicketDto {
   priority: 'low' | 'medium' | 'high' | 'critical';
 
   @IsString()
+  @MinLength(3)
   assignee: string;
 
   @IsString()
+  @MinLength(3)
   reporter: string;
-
 }

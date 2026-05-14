@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { z } from 'zod';
 
 export const createTicketSchema = z.object({
@@ -17,9 +14,7 @@ export const createTicketSchema = z.object({
 
   assignee: z.string().min(3, 'Assignee is required'),
   reporter: z.string().min(3, 'Reporter is required'),
-
 });
-
 
 export type CreateTicketType = z.infer<typeof createTicketSchema>;
 

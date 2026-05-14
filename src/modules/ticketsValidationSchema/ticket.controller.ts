@@ -29,7 +29,7 @@ export class TicketController {
 
   @Post()
   create(
-    @Body(new GeneralScehmaPipe(ticketSchemaSchema.createTicketSchema) )
+    @Body(new GeneralScehmaPipe(ticketSchemaSchema.createTicketSchema))
     body: ticketSchemaSchema.CreateTicketType,
   ): Ticket {
     return this.ticketService.create(body);
@@ -38,7 +38,8 @@ export class TicketController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body(new GeneralScehmaPipe(ticketSchemaSchema.updateTicketSchema)) body: ticketSchemaSchema.UpdateTicketType,
+    @Body(new GeneralScehmaPipe(ticketSchemaSchema.updateTicketSchema))
+    body: ticketSchemaSchema.UpdateTicketType,
   ): Ticket | null {
     return this.ticketService.update(Number(id), body);
   }

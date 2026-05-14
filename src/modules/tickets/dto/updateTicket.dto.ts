@@ -1,5 +1,4 @@
-import { CreateTicketDto } from "./createTicket.dto";
+import { CreateTicketDto } from './createTicket.dto';
 import { PartialType } from '@nestjs/mapped-types';
 
-
-export class UpdateTicketDto extends PartialType(CreateTicketDto){}
+export class UpdateTicketDto extends PartialType(CreateTicketDto) {}

@@ -1,79 +1,89 @@
-import { Injectable } from '@nestjs/common';
-import { Ticket } from '../../common/interfaces/ticket';
-import { UpdateTicketDto } from './dto/updateTicket.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Ticket, TicketDocument } from '../../common/schemas/ticket.schema';
 import { CreateTicketDto } from './dto/createTicket.dto';
+import { UpdateTicketDto } from './dto/updateTicket.dto';
+
+export type TicketView = {
+  id: string;
+  title: string;
+  description: string;
+  status: Ticket['status'];
+  priority: Ticket['priority'];
+  reporter: string;
+  assignee: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 @Injectable()
 export class TicketService {
-  private tickets: Ticket[] = [
-    {
-      id: 1,
-      title: 'Login issue',
-      description: 'User cannot login to the system',
-      status: 'open',
-      priority: 'high',
-      reporter: 'Hussien',
-      assignee: 'Ahmed',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 2,
-      title: 'UI bug',
-      description: 'Button not clickable on homepage',
-      status: 'in-progress',
-      priority: 'medium',
-      reporter: 'Sara',
-      assignee: 'Ali',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 3,
-      title: 'Crash on checkout',
-      description: 'App crashes when submitting order',
-      status: 'closed',
-      priority: 'critical',
-      reporter: 'Omar',
-      assignee: 'Mona',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  constructor(
+    @InjectModel(Ticket.name) private readonly ticketModel: Model<Ticket>,
+  ) {}
 
-  findAll(): Ticket[] {
-    return this.tickets;
-  }
-
-  findOne(id: number): Ticket | undefined {
-    return this.tickets.find((ticket) => ticket.id === id);
-  }
-
-  create(ticketData: CreateTicketDto): Ticket {
-    const newTicket: Ticket = {
-      id: this.tickets.length + 1,
-      ...ticketData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  private toView(doc: TicketDocument): TicketView {
+    const o = doc.toObject() as unknown as Ticket & {
+      _id: Types.ObjectId;
+      createdAt: Date;
+      updatedAt: Date;
     };
-
-    this.tickets.push(newTicket);
-    return newTicket;
+    return {
+      id: o._id.toHexString(),
+      title: o.title,
+      description: o.description,
+      status: o.status,
+      priority: o.priority,
+      reporter: o.reporter,
+      assignee: o.assignee,
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt,
+    };
   }
 
-  update(id: number, updateData: UpdateTicketDto): Ticket | null {
-    const ticket = this.findOne(id);
-    if (!ticket) return null;
-
-    Object.assign(ticket, updateData, { updatedAt: new Date() });
-    return ticket;
+  async findAll(): Promise<TicketView[]> {
+    const docs = await this.ticketModel.find().sort({ createdAt: -1 }).exec();
+    return docs.map((d) => this.toView(d));
   }
 
-  delete(id: number): boolean {
-    const index = this.tickets.findIndex((t) => t.id === id);
-    if (index === -1) return false;
+  async findOne(id: string): Promise<TicketView> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Ticket not found');
+    }
+    const doc = await this.ticketModel.findById(id).exec();
+    if (!doc) {
+      throw new NotFoundException('Ticket not found');
+    }
+    return this.toView(doc);
+  }
 
-    this.tickets.splice(index, 1);
-    return true;
+  async create(dto: CreateTicketDto): Promise<TicketView> {
+    const doc = await this.ticketModel.create(dto);
+    return this.toView(doc);
+  }
+
+  async update(id: string, dto: UpdateTicketDto): Promise<TicketView> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Ticket not found');
+    }
+    const doc = await this.ticketModel
+      .findByIdAndUpdate(id, dto, { new: true })
+      .exec();
+    if (!doc) {
+      throw new NotFoundException('Ticket not found');
+    }
+    return this.toView(doc);
+  }
+
+  async remove(id: string): Promise<{ success: boolean }> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Ticket not found');
+    }
+    const res = await this.ticketModel.findByIdAndDelete(id).exec();
+    if (!res) {
+      throw new NotFoundException('Ticket not found');
+    }
+    return { success: true };
   }
 }

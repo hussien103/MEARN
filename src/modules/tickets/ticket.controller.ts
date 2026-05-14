@@ -1,51 +1,53 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
   Patch,
-  ValidationPipe,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
+import { UserRole } from '../../common/schemas/user.schema';
+import { Roles } from '../../common/decorators/roles/role.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { AuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TicketService } from './ticket.service';
-import type { Ticket } from '../../common/interfaces/ticket';
 import { CreateTicketDto } from './dto/createTicket.dto';
 import { UpdateTicketDto } from './dto/updateTicket.dto';
 
-@Controller('ticketsDTO')
+@Controller('tickets')
+@UseGuards(AuthGuard, RolesGuard)
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Get()
-  getAll(): Ticket[] {
+  @Roles(UserRole.ADMIN, UserRole.CUSTOMER)
+  findAll() {
     return this.ticketService.findAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string): Ticket | undefined {
-    return this.ticketService.findOne(Number(id));
+  @Roles(UserRole.ADMIN, UserRole.CUSTOMER)
+  findOne(@Param('id') id: string) {
+    return this.ticketService.findOne(id);
   }
 
   @Post()
-  create(
-    @Body(new ValidationPipe({}))
-    body: CreateTicketDto,
-  ): Ticket {
+  @Roles(UserRole.ADMIN)
+  create(@Body() body: CreateTicketDto) {
     return this.ticketService.create(body);
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body(new ValidationPipe()) body: UpdateTicketDto,
-  ): Ticket | null {
-    return this.ticketService.update(Number(id), body);
+  @Roles(UserRole.ADMIN)
+  update(@Param('id') id: string, @Body() body: UpdateTicketDto) {
+    return this.ticketService.update(id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string): { success: boolean } {
-    const result = this.ticketService.delete(Number(id));
-    return { success: result };
+  @Roles(UserRole.ADMIN)
+  remove(@Param('id') id: string) {
+    return this.ticketService.remove(id);
   }
 }
